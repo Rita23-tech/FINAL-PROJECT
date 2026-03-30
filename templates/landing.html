@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCheck AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav>
+    <div><strong>CodeCheck AI</strong></div>
+    <div>
+        <a href="/demo">Demo</a>
+        <a href="/code-summary">Code Summary</a>
+        {% if session.get('user_id') %}
+            <a href="/dashboard">Dashboard</a>
+            <a href="/code-quiz">Code Quiz</a>
+            <a href="/code-converter">Code Converter</a>
+            <a href="/logout">Logout</a>
+        {% else %}
+            <a href="/login">Login</a>
+            <a href="/signup">Sign Up</a>
+        {% endif %}
+    </div>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+</nav>
+
+<!-- ── Get Started Modal ── -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+<div class="modal" id="getStartedModal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2>Welcome to CodeCheck AI</h2>
+    <p>How would you like to continue?</p>
+    <div class="modal-options">
+        <a href="/signup" class="modal-option modal-option-primary">
+            <span class="modal-option-icon">✨</span>
+            <div>
+                <strong>Create Account</strong>
+                <span>Access all 4 tools + history</span>
+            </div>
+        </a>
+        <a href="/login" class="modal-option modal-option-secondary">
+            <span class="modal-option-icon">🔑</span>
+            <div>
+                <strong>Sign In</strong>
+                <span>Continue with your account</span>
+            </div>
+        </a>
+        <a href="/demo" class="modal-option modal-option-ghost">
+            <span class="modal-option-icon">👀</span>
+            <div>
+                <strong>Continue Without Account</strong>
+                <span>Access Demo + Code Summary only</span>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ── Hero Section ── -->
+<div class="hero">
+    <div class="hero-content">
+       
+        <h1 class="hero-title">CodeCheck <span class="hero-accent">AI</span></h1>
+        <p class="hero-subtitle">
+            Detect code plagiarism, explain code, convert between languages,
+            and test your understanding — all in one place.
+        </p>
+        <div class="hero-buttons">
+            {% if session.get('user_id') %}
+                <a href="/dashboard"><button class="btn-primary">Go to Dashboard</button></a>
+            {% else %}
+                <button class="btn-primary" onclick="openModal()">✨ Get Started</button>
+                <a href="/demo"><button class="btn-secondary">Try Without Account</button></a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ── Feature Cards ── -->
+<div class="features-section">
+    <h2 class="features-title">What Can You Do?</h2>
+    <div class="features-grid">
+
+        <div class="feature-card feature-card-cyan">
+            <span class="feature-icon">🔍</span>
+            <h3>Plagiarism Checker</h3>
+            <p>Compare two code snippets and get a similarity score powered by Jaccard + AST analysis.</p>
+            <span class="feature-tag free">Free</span>
+        </div>
+
+        <div class="feature-card feature-card-pink">
+            <span class="feature-icon">📖</span>
+            <h3>Code Summary</h3>
+            <p>Paste any code and get a plain-English explanation of what it does, plus bug detection.</p>
+            <span class="feature-tag free">Free</span>
+        </div>
+
+        <div class="feature-card feature-card-purple">
+            <span class="feature-icon">🧠</span>
+            <h3>Code Quiz</h3>
+            <p>Generate a comprehension quiz from any code. Perfect for testing if you truly understand it.</p>
+            <span class="feature-tag login">Login Required</span>
+        </div>
+
+        <div class="feature-card feature-card-amber">
+            <span class="feature-icon">🔄</span>
+            <h3>Code Converter</h3>
+            <p>Convert code between Python, JavaScript, Java and C++ while preserving the same logic.</p>
+            <span class="feature-tag login">Login Required</span>
+        </div>
+
+    </div>
+</div>
+
+<footer>
+    <p>CodeCheck AI &nbsp;·&nbsp; Built with Flask + Gemini AI + Developer Rita</p>
+</footer>
+
+<script>
+    function openModal()  {
+        document.getElementById("getStartedModal").classList.add("open");
+        document.getElementById("modalOverlay").classList.add("open");
+    }
+    function closeModal() {
+        document.getElementById("getStartedModal").classList.remove("open");
+        document.getElementById("modalOverlay").classList.remove("open");
+    }
+    function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+    }
+</script>
+</body>
+</html>

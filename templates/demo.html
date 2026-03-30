@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo | CodeCheck AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="watermark-container" id="watermark-container"></div>
+<script>
+    (function() {
+        const container = document.getElementById('watermark-container');
+        const fonts = ["'Segoe UI'", "monospace", "serif", "cursive", "Georgia"];
+        const colors = [
+            "rgba(168, 85, 247, 0.20)",
+            "rgba(168, 85, 247, 0.32)",
+            "rgba(168, 85, 247, 0.12)",
+            "rgba(236, 72, 153, 0.20)",
+            "rgba(236, 72, 153, 0.30)",
+            "rgba(124, 58, 237, 0.24)",
+            "rgba(192, 132, 252, 0.30)",
+            "rgba(216, 180, 254, 0.38)",
+        ];
+        // Seeded PRNG — same layout on every refresh
+        let seed = 2025;
+        function rand() {
+            seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+            return (seed >>> 0) / 0xffffffff;
+        }
+        // 10x10 grid = 100 cells, one word per cell (no overlap)
+        const cols = 10, rows = 10;
+        const cellW = 100 / cols;
+        const cellH = 100 / rows;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const el = document.createElement('div');
+                el.className = 'watermark-word';
+                el.innerHTML = 'CodeCheck<br><span style="display:block;text-align:center;">AI</span>';
+                el.style.left = (col * cellW + rand() * cellW * 0.55 + cellW * 0.1) + "%";
+                el.style.top  = (row * cellH + rand() * cellH * 0.55 + cellH * 0.1) + "%";
+                el.style.fontSize   = (rand() * 8 + 14) + "px";
+                el.style.transform  = "rotate(" + (rand() * 360) + "deg)";
+                el.style.fontFamily = fonts[Math.floor(rand() * fonts.length)];
+                el.style.color      = colors[Math.floor(rand() * colors.length)];
+                container.appendChild(el);
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+<nav>
+    <div><strong>CodeCheck AI</strong></div>
+    <div>
+        <a href="/">Home</a>
+        <a href="/demo">Check Plagiarism</a>
+        <a href="/code-summary">Code Summary</a>
+        <a href="/code-converter">Code Converter</a>
+        <a href="/code-quiz">Code Quiz</a>
+        <a href="/login">Login</a>
+        <a href="/signup">Sign Up</a>
+        <a href="/logout">Logout</a>
+    </div>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+</nav>
+
+
+<div class="container">
+    <h1>Code Similarity Checker</h1>
+
+    <form method="POST" id="similarityForm">
+
+        <h3>Code A</h3>
+        <textarea id="code1Input" name="code1" rows="10" cols="60"></textarea>
+
+        <h3>Code B</h3>
+        <textarea id="code2Input" name="code2" rows="10" cols="60"></textarea>
+
+        <label for="language">Select Language:</label>
+        <select name="language" required>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="javascript">JavaScript</option>
+        </select>
+
+        <br><br>
+        <button type="submit">Check Similarity</button>
+        <button type="button" class="btn-clear" onclick="clearAll()">🗑 Clear</button>
+
+    </form>
+
+    {% if result is not none %}
+
+        {% if result >= 70 %}
+            {% set level = "high" %}
+            {% set label = "High Similarity" %}
+        {% elif result >= 40 %}
+            {% set level = "medium" %}
+            {% set label = "Moderate Similarity" %}
+        {% else %}
+            {% set level = "low" %}
+            {% set label = "Low Similarity" %}
+        {% endif %}
+
+        <div class="score-section" id="scoreSection">
+            <div class="score-header">
+                <span class="score-number">{{ result }}% Similar</span>
+                <span class="badge {{ level }}">{{ label }}</span>
+            </div>
+            <div class="progress-bg">
+                <div class="progress-fill fill-{{ level }}"
+                     id="progressBar"
+                     data-target="{{ result }}">
+                </div>
+            </div>
+        </div>
+
+        {% if result < 20 %}
+        <div class="certificate" id="certificate">
+            <span class="cert-icon">🏅</span>
+            <h2>Originality Certificate</h2>
+            <p>This code comparison has been analyzed by <strong>CodeCheck AI</strong></p>
+            <div class="cert-score">{{ result }}% Similarity</div>
+            <p>The submitted code appears to be <strong>original</strong>.<br>
+               No significant similarities were detected between the two code samples.</p>
+            <div class="cert-footer">
+                Generated by CodeCheck AI &nbsp;·&nbsp; For reference purposes only.
+            </div>
+            <button class="cert-screenshot-btn" onclick="copyCertHint()">
+                📸 Screenshot to save
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="diff-section" id="diffSection">
+            <h3>🔍 Line-by-Line Comparison</h3>
+            <p class="diff-legend">
+                <span><span class="legend-dot dot-match"></span>Line exists in both codes</span>
+                <span><span class="legend-dot dot-add"></span>Unique to this code</span>
+                <span><span class="legend-dot dot-remove"></span>Missing (exists in other code)</span>
+            </p>
+            <div class="diff-grid">
+                <div class="diff-box">
+                    <div class="diff-box-header">
+                        Code A
+                        <span class="line-counts" id="countsA"></span>
+                    </div>
+                    <pre id="diffA"></pre>
+                </div>
+                <div class="diff-box">
+                    <div class="diff-box-header">
+                        Code B
+                        <span class="line-counts" id="countsB"></span>
+                    </div>
+                    <pre id="diffB"></pre>
+                </div>
+            </div>
+        </div>
+
+    {% endif %}
+
+    <br>
+</div>
+
+
+
+<script>
+    document.getElementById("similarityForm").addEventListener("submit", function () {
+        sessionStorage.setItem("savedCodeA", document.getElementById("code1Input").value);
+        sessionStorage.setItem("savedCodeB", document.getElementById("code2Input").value);
+    });
+
+    window.addEventListener("load", function () {
+
+        const savedA = sessionStorage.getItem("savedCodeA");
+        const savedB = sessionStorage.getItem("savedCodeB");
+        if (savedA) document.getElementById("code1Input").value = savedA;
+        if (savedB) document.getElementById("code2Input").value = savedB;
+
+        const bar = document.getElementById("progressBar");
+        if (bar) {
+            const target = bar.getAttribute("data-target");
+            setTimeout(() => { bar.style.width = target + "%"; }, 100);
+        }
+
+        const diffA = document.getElementById("diffA");
+        const diffB = document.getElementById("diffB");
+        if (!diffA || !diffB) return;
+
+        const codeA = sessionStorage.getItem("savedCodeA") || "";
+        const codeB = sessionStorage.getItem("savedCodeB") || "";
+
+        const linesA = codeA.split("\n");
+        const linesB = codeB.split("\n");
+
+        const setA = new Set(linesA.map(l => l.trim()).filter(l => l !== ""));
+        const setB = new Set(linesB.map(l => l.trim()).filter(l => l !== ""));
+
+        function renderLines(lines, thisSet, otherSet, container, countsEl) {
+            container.innerHTML = "";
+            let matchCount  = 0;
+            let uniqueCount = 0;
+
+            lines.forEach((line, i) => {
+                const trimmed = line.trim();
+                let cls;
+                if (trimmed !== "" && otherSet.has(trimmed)) {
+                    cls = "line-match";
+                    matchCount++;
+                } else {
+                    cls = "line-unique";
+                    uniqueCount++;
+                }
+
+                const row = document.createElement("div");
+                row.className = `diff-line ${cls}`;
+
+                const num = document.createElement("span");
+                num.className = "diff-line-number";
+                num.textContent = i + 1;
+
+                const content = document.createElement("span");
+                content.textContent = line;
+
+                row.appendChild(num);
+                row.appendChild(content);
+                container.appendChild(row);
+            });
+
+            if (countsEl) {
+                countsEl.textContent =
+                    `${lines.length} lines · ${matchCount} shared · ${uniqueCount} unique`;
+            }
+        }
+
+        renderLines(linesA, setA, setB, diffA, document.getElementById("countsA"));
+        renderLines(linesB, setB, setA, diffB, document.getElementById("countsB"));
+    });
+
+    function clearAll() {
+        document.getElementById("code1Input").value = "";
+        document.getElementById("code2Input").value = "";
+        sessionStorage.removeItem("savedCodeA");
+        sessionStorage.removeItem("savedCodeB");
+
+        const toHide = ["scoreSection", "diffSection", "certificate"];
+        toHide.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = "none";
+        });
+    }
+
+    function copyCertHint() {
+        alert("Tip: Press Ctrl + Shift + S (Windows) or Cmd + Shift + 4 (Mac) to screenshot!");
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+    }
+
+    // ── Sidebar toggle ────────────────────────────
+    let sidebarOpen = true;
+    function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        const sidebar = document.getElementById("dashSidebar");
+        const btn     = document.getElementById("sidebarToggle");
+        sidebar.classList.toggle("collapsed", !sidebarOpen);
+        btn.textContent = sidebarOpen ? "◀" : "▶";
+    }
+
+
+</script>
+
+</body>
+</html>

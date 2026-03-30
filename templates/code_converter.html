@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Converter | CodeCheck AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="watermark-container" id="watermark-container"></div>
+<script>
+    (function() {
+        const container = document.getElementById('watermark-container');
+        const fonts = ["'Segoe UI'", "monospace", "serif", "cursive", "Georgia"];
+        const colors = [
+            "rgba(168, 85, 247, 0.20)",
+            "rgba(168, 85, 247, 0.32)",
+            "rgba(168, 85, 247, 0.12)",
+            "rgba(236, 72, 153, 0.20)",
+            "rgba(236, 72, 153, 0.30)",
+            "rgba(124, 58, 237, 0.24)",
+            "rgba(192, 132, 252, 0.30)",
+            "rgba(216, 180, 254, 0.38)",
+        ];
+        let seed = 2025;
+        function rand() {
+            seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+            return (seed >>> 0) / 0xffffffff;
+        }
+        const cols = 10, rows = 10;
+        const cellW = 100 / cols;
+        const cellH = 100 / rows;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const el = document.createElement('div');
+                el.className = 'watermark-word';
+                el.innerHTML = 'CodeCheck<br><span style="display:block;text-align:center;">AI</span>';
+                el.style.left = (col * cellW + rand() * cellW * 0.55 + cellW * 0.1) + "%";
+                el.style.top  = (row * cellH + rand() * cellH * 0.55 + cellH * 0.1) + "%";
+                el.style.fontSize   = (rand() * 8 + 14) + "px";
+                el.style.transform  = "rotate(" + (rand() * 360) + "deg)";
+                el.style.fontFamily = fonts[Math.floor(rand() * fonts.length)];
+                el.style.color      = colors[Math.floor(rand() * colors.length)];
+                container.appendChild(el);
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+<nav>
+    <div><strong>CodeCheck AI</strong></div>
+    <div>
+        <a href="/">Home</a>
+        <a href="/demo">Check Plagiarism</a>        
+        <a href="/code-summary">Code Summary</a>
+        <a href="/code-converter">Code Converter</a>
+        <a href="/code-quiz">Code Quiz</a>
+        <a href="/dashboard">Dashboard</a>
+    </div>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+</nav>
+
+<div class="dash-layout" id="dashLayout">
+
+    <!-- Collapsible Left Sidebar -->
+    <div class="dash-sidebar" id="dashSidebar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">◀</button>
+        <div class="sidebar-content">
+            <p class="sidebar-label">Navigation</p>
+            <a href="/demo"           class="sidebar-link">🔍 <span>Plagiarism Checker</span></a>
+            <a href="/code-summary"   class="sidebar-link">📖 <span>Code Summary</span></a>
+            <a href="/code-quiz"      class="sidebar-link">🧠 <span>Code Quiz</span></a>
+            <a href="/code-converter" class="sidebar-link">🔄 <span>Code Converter</span></a>
+            <hr class="sidebar-divider">
+            <a href="/logout" class="sidebar-link sidebar-link-danger">🚪 <span>Logout</span></a>
+        </div>
+</div>
+
+<div class="container">
+    <h1>🔄 Code Converter</h1>
+    <p class="subtitle">Paste your code, pick a target language, and get an instant conversion.</p>
+
+    <form method="POST" id="converterForm" onsubmit="showLoading()">
+
+        <div class="lang-row">
+            <div class="lang-group">
+                <label>From:</label>
+                <select name="source_language" id="sourceLang" required>
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="java">Java</option>
+                    <option value="cpp">C++</option>
+                </select>
+            </div>
+
+            <div class="arrow-divider">→</div>
+
+            <div class="lang-group">
+                <label>To:</label>
+                <select name="target_language" id="targetLang" required>
+                    <option value="javascript">JavaScript</option>
+                    <option value="java">Java</option>
+                    <option value="cpp">C++</option>
+                    <option value="python">Python</option>
+                </select>
+            </div>
+        </div>
+
+        <br>
+
+        <label>Paste Your Code:</label><br>
+        <textarea id="codeInput" name="code" rows="14" required
+                  placeholder="Paste your code here..."></textarea>
+
+        <br>
+
+        <button type="submit">Convert Code</button>
+        <button type="button" class="btn-clear" onclick="clearConverter()">🗑 Clear</button>
+
+        <p id="loadingMessage" style="display:none; margin-top:12px;">
+            ⏳ Converting your code...
+        </p>
+
+    </form>
+
+    {% if error %}
+    <div class="converter-error">
+        ⚠️ {{ error }}
+    </div>
+    {% endif %}
+
+    {% if converted_code %}
+    <div class="converter-result" id="converterResult">
+
+        <div class="converter-output">
+            <div class="converter-output-header">
+                <span>✅ Converted Code</span>
+                <button class="copy-btn" onclick="copyCode()">📋 Copy</button>
+            </div>
+            <pre id="convertedCode">{{ converted_code }}</pre>
+        </div>
+
+        {% if explanation %}
+        <div class="converter-explanation">
+            <h3>📝 What Changed</h3>
+            <p style="white-space: pre-wrap;">{{ explanation }}</p>
+        </div>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    // ── Restore textarea + language selectors after POST reload ───────────────
+    window.addEventListener("load", function () {
+        const savedCode   = sessionStorage.getItem("converterCode");
+        const savedSource = sessionStorage.getItem("converterSource");
+        const savedTarget = sessionStorage.getItem("converterTarget");
+        if (savedCode)   document.getElementById("codeInput").value  = savedCode;
+        if (savedSource) document.getElementById("sourceLang").value = savedSource;
+        if (savedTarget) document.getElementById("targetLang").value = savedTarget;
+    });
+
+    document.getElementById("converterForm").addEventListener("submit", function () {
+        sessionStorage.setItem("converterCode",   document.getElementById("codeInput").value);
+        sessionStorage.setItem("converterSource", document.getElementById("sourceLang").value);
+        sessionStorage.setItem("converterTarget", document.getElementById("targetLang").value);
+    });
+
+    function showLoading() {
+        document.getElementById("loadingMessage").style.display = "block";
+    }
+
+    function clearConverter() {
+        document.getElementById("codeInput").value = "";
+        sessionStorage.removeItem("converterCode");
+        sessionStorage.removeItem("converterSource");
+        sessionStorage.removeItem("converterTarget");
+        const result = document.getElementById("converterResult");
+        if (result) result.style.display = "none";
+    }
+
+    function copyCode() {
+        const code = document.getElementById("convertedCode").textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            const btn = document.querySelector(".copy-btn");
+            btn.textContent = "✅ Copied!";
+            setTimeout(() => { btn.textContent = "📋 Copy"; }, 2000);
+        });
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+    }
+
+    // ── Sidebar toggle ────────────────────────────
+    let sidebarOpen = true;
+    function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        const sidebar = document.getElementById("dashSidebar");
+        const btn     = document.getElementById("sidebarToggle");
+        sidebar.classList.toggle("collapsed", !sidebarOpen);
+        btn.textContent = sidebarOpen ? "◀" : "▶";
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | CodeCheck AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav>
+    <div><strong>CodeCheck AI</strong></div>
+    <div>
+        <a href="/">Home</a>
+        <a href="/demo">Demo</a>        
+        <a href="/code-summary">Code Summary</a>
+        <a href="/code-converter">Code Converter</a>
+        <a href="/code-quiz">Code Quiz</a>
+        <a href="/login">Login</a>
+        <a href="/signup">Sign Up</a>
+        <a href="/logout">Logout</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <button onclick="toggleDarkMode()">🌙</button>
+        <button class="profile-btn" onclick="toggleProfile()">
+            👤 {{ session.get('username', 'User') }}
+        </button>
+    </div>
+</nav>
+
+<!-- ── Profile Side Panel (collapsible) ── -->
+<div class="profile-overlay" id="profileOverlay" onclick="toggleProfile()"></div>
+<div class="profile-panel" id="profilePanel">
+
+    <div class="profile-panel-header">
+        <h3>My Profile</h3>
+        <button class="panel-close-btn" onclick="toggleProfile()">✕</button>
+    </div>
+
+    <div class="profile-avatar">
+        {{ session.get('username', 'U')[0].upper() }}
+    </div>
+
+    <div class="profile-info">
+        <div class="profile-info-row">
+            <span class="profile-info-label">Username</span>
+            <span class="profile-info-value">{{ user['username'] }}</span>
+        </div>
+        <div class="profile-info-row">
+            <span class="profile-info-label">Member Since</span>
+            <span class="profile-info-value">
+                {{ user['created_at'][:10] if user['created_at'] else 'N/A' }}
+            </span>
+        </div>
+        <div class="profile-info-row">
+            <span class="profile-info-label">Total Checks</span>
+            <span class="profile-info-value">{{ total_checks }}</span>
+        </div>
+    </div>
+
+    <div class="profile-section-title">Recent Checks</div>
+    {% if recent_checks %}
+        {% for check in recent_checks %}
+        <div class="recent-check-row">
+            <span class="recent-check-lang">{{ check['language'] }}</span>
+            <span class="recent-check-score
+                {% if check['similarity'] >= 70 %}score-high
+                {% elif check['similarity'] >= 40 %}score-medium
+                {% else %}score-low{% endif %}">
+                {{ check['similarity'] }}%
+            </span>
+            <span class="recent-check-date">{{ check['created_at'][:10] }}</span>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="no-checks">No checks yet. Try the demo!</p>
+    {% endif %}
+
+    <a href="/logout"><button class="btn-logout">Logout</button></a>
+</div>
+
+<!-- ── Dashboard Body ── -->
+<div class="dash-layout" id="dashLayout">
+
+    <!-- Collapsible Left Sidebar -->
+    <div class="dash-sidebar" id="dashSidebar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">◀</button>
+        <div class="sidebar-content">
+            <p class="sidebar-label">Navigation</p>
+            <a href="/demo"           class="sidebar-link">🔍 <span>Plagiarism Checker</span></a>
+            <a href="/code-summary"   class="sidebar-link">📖 <span>Code Summary</span></a>
+            <a href="/code-quiz"      class="sidebar-link">🧠 <span>Code Quiz</span></a>
+            <a href="/code-converter" class="sidebar-link">🔄 <span>Code Converter</span></a>
+            <hr class="sidebar-divider">
+            <a href="/login" class="sidebar-link sidebar-link-danger">🔑 <span>Login</span></a>
+            <a href="/signup" class="sidebar-link sidebar-link-danger">🔑 <span>Sign Up</span></a>
+            <a href="/logout" class="sidebar-link sidebar-link-danger">🚪 <span>Logout</span></a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="dash-main">
+        <div class="container">
+
+            <div class="dash-welcome">
+                <h1>Welcome back, {{ session.get('username', 'User') }} 👋</h1>
+                <p>What would you like to do today?</p>
+            </div>
+
+            <div class="dash-stats">
+                <div class="stat-card stat-cyan">
+                    <span class="stat-number">{{ total_checks }}</span>
+                    <span class="stat-label">Total Checks</span>
+                </div>
+                <div class="stat-card stat-pink">
+                    <span class="stat-number">
+                        {% if recent_checks %}{{ recent_checks[0]['similarity'] }}%
+                        {% else %}—{% endif %}
+                    </span>
+                    <span class="stat-label">Last Score</span>
+                </div>
+                <div class="stat-card stat-purple">
+                    <span class="stat-number">4</span>
+                    <span class="stat-label">Tools Available</span>
+                </div>
+            </div>
+
+            <h2 style="margin-bottom:16px;">Your Tools</h2>
+            <div class="dash-tools-grid">
+
+                <a href="/demo" class="dash-tool-card tool-cyan">
+                    <span class="dash-tool-icon">🔍</span>
+                    <div>
+                        <h3>Plagiarism Checker</h3>
+                        <p>Compare two code snippets for similarity</p>
+                    </div>
+                </a>
+
+                <a href="/code-summary" class="dash-tool-card tool-pink">
+                    <span class="dash-tool-icon">📖</span>
+                    <div>
+                        <h3>Code Summary</h3>
+                        <p>Explain and debug any code instantly</p>
+                    </div>
+                </a>
+
+                <a href="/code-quiz" class="dash-tool-card tool-purple">
+                    <span class="dash-tool-icon">🧠</span>
+                    <div>
+                        <h3>Code Quiz</h3>
+                        <p>Test your understanding of any code</p>
+                    </div>
+                </a>
+
+                <a href="/code-converter" class="dash-tool-card tool-amber">
+                    <span class="dash-tool-icon">🔄</span>
+                    <div>
+                        <h3>Code Converter</h3>
+                        <p>Convert code between languages</p>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>CodeCheck AI &nbsp;·&nbsp; Built with Flask + Gemini AI</p>
+</footer>
+
+<script>
+    // ── Sidebar toggle ────────────────────────────
+    let sidebarOpen = true;
+    function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        const sidebar = document.getElementById("dashSidebar");
+        const btn     = document.getElementById("sidebarToggle");
+        sidebar.classList.toggle("collapsed", !sidebarOpen);
+        btn.textContent = sidebarOpen ? "◀" : "▶";
+    }
+
+    // ── Profile panel toggle ──────────────────────
+    let profileOpen = false;
+    function toggleProfile() {
+        profileOpen = !profileOpen;
+        document.getElementById("profilePanel").classList.toggle("open", profileOpen);
+        document.getElementById("profileOverlay").classList.toggle("open", profileOpen);
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+    }
+</script>
+
+</body>
+</html>

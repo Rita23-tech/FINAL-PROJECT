@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Summary | CodeCheck AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="watermark-container" id="watermark-container"></div>
+<script>
+    (function() {
+        const container = document.getElementById('watermark-container');
+        const fonts = ["'Segoe UI'", "monospace", "serif", "cursive", "Georgia"];
+        const colors = [
+            "rgba(168, 85, 247, 0.20)",
+            "rgba(168, 85, 247, 0.32)",
+            "rgba(168, 85, 247, 0.12)",
+            "rgba(236, 72, 153, 0.20)",
+            "rgba(236, 72, 153, 0.30)",
+            "rgba(124, 58, 237, 0.24)",
+            "rgba(192, 132, 252, 0.30)",
+            "rgba(216, 180, 254, 0.38)",
+        ];
+        let seed = 2025;
+        function rand() {
+            seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+            return (seed >>> 0) / 0xffffffff;
+        }
+        const cols = 10, rows = 10;
+        const cellW = 100 / cols;
+        const cellH = 100 / rows;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const el = document.createElement('div');
+                el.className = 'watermark-word';
+                el.innerHTML = 'CodeCheck<br><span style="display:block;text-align:center;">AI</span>';
+                el.style.left = (col * cellW + rand() * cellW * 0.55 + cellW * 0.1) + "%";
+                el.style.top  = (row * cellH + rand() * cellH * 0.55 + cellH * 0.1) + "%";
+                el.style.fontSize   = (rand() * 8 + 14) + "px";
+                el.style.transform  = "rotate(" + (rand() * 360) + "deg)";
+                el.style.fontFamily = fonts[Math.floor(rand() * fonts.length)];
+                el.style.color      = colors[Math.floor(rand() * colors.length)];
+                container.appendChild(el);
+            }
+        }
+    })();
+</script>
+
+
+
+
+
+<nav>
+    <div><strong>CodeCheck AI</strong></div>
+    <div>
+        <a href="/">Home</a>
+        <a href="/demo">Check Plagiarism</a>
+        <a href="/code-summary">Code Summary</a>
+        <a href="/code-converter">Code Converter</a>
+        <a href="/code-quiz">Code Quiz</a>
+        <a href="/login">Login</a>
+        <a href="/signup">Sign Up</a>
+        <a href="/logout">Logout</a>
+    </div>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+</nav>
+
+<div class="dash-layout" id="dashLayout">
+
+    <!-- Collapsible Left Sidebar -->
+    <div class="dash-sidebar" id="dashSidebar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">◀</button>
+        <div class="sidebar-content">
+            <p class="sidebar-label">Navigation</p>
+            <a href="/demo"           class="sidebar-link">🔍 <span>Plagiarism Checker</span></a>
+            <a href="/code-summary"   class="sidebar-link">📖 <span>Code Summary</span></a>
+            <a href="/code-quiz"      class="sidebar-link">🧠 <span>Code Quiz</span></a>
+            <a href="/code-converter" class="sidebar-link">🔄 <span>Code Converter</span></a>
+            <hr class="sidebar-divider">
+            <a href="/dashboard" class="sidebar-link">📊 <span>Dashboard</span></a>
+            <a href="/login" class="sidebar-link sidebar-link-danger">🔑 <span>Login</span></a>
+            <a href="/signup" class="sidebar-link sidebar-link-danger">🔑 <span>Sign Up</span></a>
+            <a href="/logout" class="sidebar-link sidebar-link-danger">🚪 <span>Logout</span></a>
+        </div>
+</div>
+
+<div class="container">
+    <h1>🔍Code Explanation</h1>
+    <p class="subtitle">Paste your code and get a breakdown and explanation instantly.</p>
+
+    <form method="POST" id="summaryForm" onsubmit="showLoading()">
+
+        <label>Select Language:</label>
+        <select name="language" id="langSelect" required>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="javascript">JavaScript</option>
+        </select>
+
+        <br><br>
+
+        <label>Paste Your Code:</label><br>
+        <textarea id="codeBox" name="code" rows="15" required
+                  placeholder="Paste your code here..."></textarea>
+
+        <br><br>
+
+        <button type="submit">Explain Code</button>
+        <button type="button" class="btn-clear" onclick="clearSummary()">🗑 Clear</button>
+
+        <p id="loadingMessage" style="display:none; margin-top:12px;">⏳ Analyzing code...</p>
+
+    </form>
+
+    {% if explanation %}
+    <div class="summary-card" id="summaryResults">
+        <h3>📖 What it does</h3>
+        <p>{{ explanation }}</p>
+    </div>
+    {% endif %}
+
+    {% if problems %}
+    <div class="summary-card issues">
+        <h3>⚠️ Issues found</h3>
+        <p style="white-space: pre-wrap;">{{ problems }}</p>
+    </div>
+    {% endif %}
+
+    {% if corrected_code %}
+    <div class="summary-card fix">
+        <h3>✅ Corrected code</h3>
+        <pre>{{ corrected_code }}</pre>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    // ── Restore textarea + language after POST reload ─────────────────────────
+    window.addEventListener("load", function () {
+        const savedCode = sessionStorage.getItem("summaryCode");
+        const savedLang = sessionStorage.getItem("summaryLang");
+        if (savedCode) document.getElementById("codeBox").value       = savedCode;
+        if (savedLang) document.getElementById("langSelect").value    = savedLang;
+    });
+
+    document.getElementById("summaryForm").addEventListener("submit", function () {
+        sessionStorage.setItem("summaryCode", document.getElementById("codeBox").value);
+        sessionStorage.setItem("summaryLang", document.getElementById("langSelect").value);
+    });
+
+    function showLoading() {
+        document.getElementById("loadingMessage").style.display = "block";
+    }
+
+    function clearSummary() {
+        document.getElementById("codeBox").value = "";
+        sessionStorage.removeItem("summaryCode");
+        sessionStorage.removeItem("summaryLang");
+
+        // Hide result cards without page reload
+        document.querySelectorAll(".summary-card").forEach(el => {
+            el.style.display = "none";
+        });
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+    }
+
+    // ── Sidebar toggle ────────────────────────────
+    let sidebarOpen = true;
+    function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        const sidebar = document.getElementById("dashSidebar");
+        const btn     = document.getElementById("sidebarToggle");
+        sidebar.classList.toggle("collapsed", !sidebarOpen);
+        btn.textContent = sidebarOpen ? "◀" : "▶";
+    }
+
+</script>
+
+</body>
+</html>
