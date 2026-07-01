@@ -8,48 +8,6 @@
 </head>
 <body>
 <div class="watermark-container" id="watermark-container"></div>
-<script>
-    (function() {
-        const container = document.getElementById('watermark-container');
-        const fonts = ["'Segoe UI'", "monospace", "serif", "cursive", "Georgia"];
-        const colors = [
-            "rgba(168, 85, 247, 0.20)",
-            "rgba(168, 85, 247, 0.32)",
-            "rgba(168, 85, 247, 0.12)",
-            "rgba(236, 72, 153, 0.20)",
-            "rgba(236, 72, 153, 0.30)",
-            "rgba(124, 58, 237, 0.24)",
-            "rgba(192, 132, 252, 0.30)",
-            "rgba(216, 180, 254, 0.38)",
-        ];
-        let seed = 2025;
-        function rand() {
-            seed = (seed * 1664525 + 1013904223) & 0xffffffff;
-            return (seed >>> 0) / 0xffffffff;
-        }
-        const cols = 10, rows = 10;
-        const cellW = 100 / cols;
-        const cellH = 100 / rows;
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const el = document.createElement('div');
-                el.className = 'watermark-word';
-                el.innerHTML = 'CodeCheck<br><span style="display:block;text-align:center;">AI</span>';
-                el.style.left = (col * cellW + rand() * cellW * 0.55 + cellW * 0.1) + "%";
-                el.style.top  = (row * cellH + rand() * cellH * 0.55 + cellH * 0.1) + "%";
-                el.style.fontSize   = (rand() * 8 + 14) + "px";
-                el.style.transform  = "rotate(" + (rand() * 360) + "deg)";
-                el.style.fontFamily = fonts[Math.floor(rand() * fonts.length)];
-                el.style.color      = colors[Math.floor(rand() * colors.length)];
-                container.appendChild(el);
-            }
-        }
-    })();
-</script>
-
-
-
-
 
     <nav>
     <div><strong>CodeCheck AI</strong></div>
