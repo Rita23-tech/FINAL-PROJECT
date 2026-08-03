@@ -25,7 +25,26 @@ def generate_with_fallback(prompt):
 
 app = Flask(__name__)
 app.jinja_env.globals.update(enumerate=enumerate)
-app.secret_key = "supersecretkey"
+
+TOOL_LABELS = {
+    'plagiarism': 'Plagiarism Checker',
+    'code_summary': 'Code Summary',
+    'code_quiz': 'Code Quiz',
+    'code_converter': 'Code Converter',
+}
+
+def tool_label(tool_type):
+    return TOOL_LABELS.get(tool_type, tool_type)
+
+app.jinja_env.globals.update(tool_label=tool_label)
+
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+if not app.secret_key:
+    raise RuntimeError(
+        "FLASK_SECRET_KEY is not set. Add it to your .env file, e.g.:\n"
+        "FLASK_SECRET_KEY=" + os.urandom(24).hex()
+    )
+
 app.register_blueprint(auth)
 create_tables()
 
@@ -46,6 +65,18 @@ def demo():
 
         if code1 and code2:
             result = combined_similarity(code1, code2)
+
+            if 'user_id' in session:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO stored_codes
+                    (code_text, user_id, similarity, language, tool_type)
+                    VALUES (?, ?, ?, ?, ?)""",
+                    (code1, session['user_id'], result, language, 'plagiarism')
+                )
+                conn.commit()
+                conn.close()
 
         elif code1:
             if 'user_id' not in session:
@@ -70,9 +101,9 @@ def demo():
 
             cursor.execute(
                 """INSERT INTO stored_codes
-                (code_text, user_id, similarity, language)
-                VALUES (?, ?, ?, ?)""",
-                (code1, session['user_id'], highest_similarity, language)
+                (code_text, user_id, similarity, language, tool_type)
+                VALUES (?, ?, ?, ?, ?)""",
+                (code1, session['user_id'], highest_similarity, language, 'plagiarism')
             )
             conn.commit()
             conn.close()
@@ -140,8 +171,20 @@ Keep everything short and direct. No long explanations."""
                 problems       = clean(problems)
                 corrected_code = clean(corrected_code)
 
+                if 'user_id' in session:
+                    conn = get_db()
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """INSERT INTO stored_codes
+                        (code_text, user_id, similarity, language, tool_type)
+                        VALUES (?, ?, ?, ?, ?)""",
+                        (user_code, session['user_id'], None, language, 'code_summary')
+                    )
+                    conn.commit()
+                    conn.close()
+
             except Exception as e:
-                problems = f"Error calling Gemini API: {e}"
+                problems = f"Error calling AI model: {e}"
 
     return render_template(
         "code_summary.html",
@@ -198,6 +241,17 @@ Code to analyze:
 
                 import json
                 quiz_data = json.loads(raw)
+
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO stored_codes
+                    (code_text, user_id, similarity, language, tool_type)
+                    VALUES (?, ?, ?, ?, ?)""",
+                    (user_code, session['user_id'], None, language, 'code_quiz')
+                )
+                conn.commit()
+                conn.close()
 
             except Exception as e:
                 error = f"Error generating quiz: {e}"
@@ -266,6 +320,17 @@ Code to convert:
                     converted_code = converted_code.replace("```python", "").replace("```cpp", "")
                     converted_code = converted_code.replace("```", "").strip()
 
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO stored_codes
+                    (code_text, user_id, similarity, language, tool_type)
+                    VALUES (?, ?, ?, ?, ?)""",
+                    (user_code, session['user_id'], None, f"{source_lang} to {target_lang}", 'code_converter')
+                )
+                conn.commit()
+                conn.close()
+
             except Exception as e:
                 error = f"Error calling Model API: {e}"
 
@@ -305,7 +370,7 @@ def dashboard():
     total_checks = cursor.fetchone()['total']
 
     cursor.execute(
-        """SELECT similarity, language, created_at
+        """SELECT similarity, language, tool_type, created_at
            FROM stored_codes WHERE user_id = ?
            ORDER BY created_at DESC LIMIT 5""",
         (session['user_id'],)
@@ -321,5 +386,26 @@ def dashboard():
     )
 
 
+@app.route('/history')
+def history():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """SELECT code_text, similarity, language, tool_type, created_at
+           FROM stored_codes WHERE user_id = ?
+           ORDER BY created_at DESC""",
+        (session['user_id'],)
+    )
+    all_checks = cursor.fetchall()
+    conn.close()
+
+    return render_template('history.html', all_checks=all_checks)
+
+
 if __name__ == "__main__":
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    app.run(debug=debug_mode, host='127.0.0.1', port=5000)

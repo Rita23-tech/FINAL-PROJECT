@@ -23,109 +23,60 @@
             <a href="/signup">Sign Up</a>
         {% endif %}
     </div>
-    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">Dark Mode</button>
 </nav>
 
-<!-- ── Get Started Modal ── -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
-<div class="modal" id="getStartedModal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <h2>Welcome to CodeCheck AI</h2>
-    <p>How would you like to continue?</p>
-    <div class="modal-options">
-        <a href="/signup" class="modal-option modal-option-primary">
-            <span class="modal-option-icon">✨</span>
-            <div>
-                <strong>Create Account</strong>
-                <span>Access all 4 tools + history</span>
-            </div>
-        </a>
-        <a href="/login" class="modal-option modal-option-secondary">
-            <span class="modal-option-icon">🔑</span>
-            <div>
-                <strong>Sign In</strong>
-                <span>Continue with your account</span>
-            </div>
-        </a>
-        <a href="/demo" class="modal-option modal-option-ghost">
-            <span class="modal-option-icon">👀</span>
-            <div>
-                <strong>Continue Without Account</strong>
-                <span>Access Demo + Code Summary only</span>
-            </div>
-        </a>
-    </div>
-</div>
-
 <!-- ── Hero Section ── -->
-<div class="hero">
-    <div class="hero-content">
-       
-        <h1 class="hero-title">CodeCheck <span class="hero-accent">AI</span></h1>
+<div class="hero-split">
+    <div class="hero-copy">
+        <p class="hero-eyebrow">Plagiarism detection for code</p>
+        <h1 class="hero-heading">Know if your code is really yours</h1>
         <p class="hero-subtitle">
-            Detect code plagiarism, explain code, convert between languages,
-            and test your understanding — all in one place.
+            Paste two snippets. Get a similarity score built on real structural
+            analysis, not just string matching.
         </p>
         <div class="hero-buttons">
             {% if session.get('user_id') %}
                 <a href="/dashboard"><button class="btn-primary">Go to Dashboard</button></a>
             {% else %}
-                <button class="btn-primary" onclick="openModal()">✨ Get Started</button>
-                <a href="/demo"><button class="btn-secondary">Try Without Account</button></a>
+                <a href="/signup"><button class="btn-primary">Try it free</button></a>
+                <a href="/login"><button class="btn-secondary">Sign in</button></a>
             {% endif %}
         </div>
+        <ul class="tool-list">
+            <li class="tool-list-item">
+                <a href="/demo">Plagiarism Checker</a>
+                <span class="tool-list-tag tag-free">Free</span>
+            </li>
+            <li class="tool-list-item">
+                <a href="/code-summary">Code Summary</a>
+                <span class="tool-list-tag tag-free">Free</span>
+            </li>
+            <li class="tool-list-item">
+                <a href="/code-quiz">Code Quiz</a>
+                <span class="tool-list-tag tag-login">Login required</span>
+            </li>
+            <li class="tool-list-item">
+                <a href="/code-converter">Code Converter</a>
+                <span class="tool-list-tag tag-login">Login required</span>
+            </li>
+        </ul>
     </div>
-</div>
 
-<!-- ── Feature Cards ── -->
-<div class="features-section">
-    <h2 class="features-title">What Can You Do?</h2>
-    <div class="features-grid">
-
-        <div class="feature-card feature-card-cyan">
-            <span class="feature-icon">🔍</span>
-            <h3>Plagiarism Checker</h3>
-            <p>Compare two code snippets and get a similarity score powered by Jaccard + AST analysis.</p>
-            <span class="feature-tag free">Free</span>
-        </div>
-
-        <div class="feature-card feature-card-pink">
-            <span class="feature-icon">📖</span>
-            <h3>Code Summary</h3>
-            <p>Paste any code and get a plain-English explanation of what it does, plus bug detection.</p>
-            <span class="feature-tag free">Free</span>
-        </div>
-
-        <div class="feature-card feature-card-purple">
-            <span class="feature-icon">🧠</span>
-            <h3>Code Quiz</h3>
-            <p>Generate a comprehension quiz from any code. Perfect for testing if you truly understand it.</p>
-            <span class="feature-tag login">Login Required</span>
-        </div>
-
-        <div class="feature-card feature-card-amber">
-            <span class="feature-icon">🔄</span>
-            <h3>Code Converter</h3>
-            <p>Convert code between Python, JavaScript, Java and C++ while preserving the same logic.</p>
-            <span class="feature-tag login">Login Required</span>
-        </div>
-
+    <div class="hero-preview">
+        <p class="hero-preview-label">Demo output</p>
+        <p class="hero-preview-metric">similarity_score</p>
+        <p class="hero-preview-value">72.4% match</p>
+        <div class="hero-preview-bar"><div class="hero-preview-bar-fill"></div></div>
+        <p class="hero-preview-breakdown">Jaccard: 61% &nbsp;·&nbsp; AST structure: 79%</p>
     </div>
 </div>
 
 <footer>
-    <p>CodeCheck AI &nbsp;·&nbsp; Built with Flask + Gemini AI + Developer Rita</p>
+    <p>CodeCheck AI &nbsp;·&nbsp; Built with Flask + Groq (Llama 3.3)</p>
 </footer>
 
 <script>
-    function openModal()  {
-        document.getElementById("getStartedModal").classList.add("open");
-        document.getElementById("modalOverlay").classList.add("open");
-    }
-    function closeModal() {
-        document.getElementById("getStartedModal").classList.remove("open");
-        document.getElementById("modalOverlay").classList.remove("open");
-    }
     function toggleDarkMode() {
         document.body.classList.toggle("dark-mode");
     }

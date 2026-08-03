@@ -24,7 +24,7 @@
         <a href="/code-quiz">Code Quiz</a>
         <a href="/dashboard">Dashboard</a>
     </div>
-    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">Dark Mode</button>
 </nav>
 
 <div class="dash-layout" id="dashLayout">
@@ -34,17 +34,17 @@
         <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">◀</button>
         <div class="sidebar-content">
             <p class="sidebar-label">Navigation</p>
-            <a href="/demo"           class="sidebar-link">🔍 <span>Plagiarism Checker</span></a>
-            <a href="/code-summary"   class="sidebar-link">📖 <span>Code Summary</span></a>
-            <a href="/code-quiz"      class="sidebar-link">🧠 <span>Code Quiz</span></a>
-            <a href="/code-converter" class="sidebar-link">🔄 <span>Code Converter</span></a>
+            <a href="/demo"           class="sidebar-link"><span>Plagiarism Checker</span></a>
+            <a href="/code-summary"   class="sidebar-link"><span>Code Summary</span></a>
+            <a href="/code-quiz"      class="sidebar-link"><span>Code Quiz</span></a>
+            <a href="/code-converter" class="sidebar-link"><span>Code Converter</span></a>
             <hr class="sidebar-divider">
-            <a href="/logout" class="sidebar-link sidebar-link-danger">🚪 <span>Logout</span></a>
+            <a href="/logout" class="sidebar-link sidebar-link-danger"><span>Logout</span></a>
         </div>
 </div>
 
 <div class="container">
-    <h1>🔄 Code Converter</h1>
+    <h1>Code Converter</h1>
     <p class="subtitle">Paste your code, pick a target language, and get an instant conversion.</p>
 
     <form method="POST" id="converterForm" onsubmit="showLoading()">
@@ -82,7 +82,7 @@
         <br>
 
         <button type="submit">Convert Code</button>
-        <button type="button" class="btn-clear" onclick="clearConverter()">🗑 Clear</button>
+        <button type="button" class="btn-clear" onclick="clearConverter()">Clear</button>
 
         <p id="loadingMessage" style="display:none; margin-top:12px;">
             ⏳ Converting your code...
@@ -92,7 +92,7 @@
 
     {% if error %}
     <div class="converter-error">
-        ⚠️ {{ error }}
+        Error: {{ error }}
     </div>
     {% endif %}
 
@@ -101,15 +101,15 @@
 
         <div class="converter-output">
             <div class="converter-output-header">
-                <span>✅ Converted Code</span>
-                <button class="copy-btn" onclick="copyCode()">📋 Copy</button>
+                <span>Converted Code</span>
+                <button class="copy-btn" onclick="copyCode()">Copy</button>
             </div>
             <pre id="convertedCode">{{ converted_code }}</pre>
         </div>
 
         {% if explanation %}
         <div class="converter-explanation">
-            <h3>📝 What Changed</h3>
+            <h3>What Changed</h3>
             <p style="white-space: pre-wrap;">{{ explanation }}</p>
         </div>
         {% endif %}
@@ -153,8 +153,8 @@
         const code = document.getElementById("convertedCode").textContent;
         navigator.clipboard.writeText(code).then(() => {
             const btn = document.querySelector(".copy-btn");
-            btn.textContent = "✅ Copied!";
-            setTimeout(() => { btn.textContent = "📋 Copy"; }, 2000);
+            btn.textContent = "Copied!";
+            setTimeout(() => { btn.textContent = "Copy"; }, 2000);
         });
     }
 

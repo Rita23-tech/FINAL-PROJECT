@@ -22,7 +22,7 @@
         <a href="/signup">Sign Up</a>
         <a href="/logout">Logout</a>
     </div>
-    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">Dark Mode</button>
 </nav>
 
 <div class="dash-layout" id="dashLayout">
@@ -32,20 +32,20 @@
         <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">◀</button>
         <div class="sidebar-content">
             <p class="sidebar-label">Navigation</p>
-            <a href="/demo"           class="sidebar-link">🔍 <span>Plagiarism Checker</span></a>
-            <a href="/code-summary"   class="sidebar-link">📖 <span>Code Summary</span></a>
-            <a href="/code-quiz"      class="sidebar-link">🧠 <span>Code Quiz</span></a>
-            <a href="/code-converter" class="sidebar-link">🔄 <span>Code Converter</span></a>
+            <a href="/demo"           class="sidebar-link"><span>Plagiarism Checker</span></a>
+            <a href="/code-summary"   class="sidebar-link"><span>Code Summary</span></a>
+            <a href="/code-quiz"      class="sidebar-link"><span>Code Quiz</span></a>
+            <a href="/code-converter" class="sidebar-link"><span>Code Converter</span></a>
             <hr class="sidebar-divider">
-            <a href="/dashboard" class="sidebar-link">📊 <span>Dashboard</span></a>
-            <a href="/login" class="sidebar-link sidebar-link-danger">🔑 <span>Login</span></a>
-            <a href="/signup" class="sidebar-link sidebar-link-danger">🔑 <span>Sign Up</span></a>
-            <a href="/logout" class="sidebar-link sidebar-link-danger">🚪 <span>Logout</span></a>
+            <a href="/dashboard" class="sidebar-link"><span>Dashboard</span></a>
+            <a href="/login" class="sidebar-link sidebar-link-danger"><span>Login</span></a>
+            <a href="/signup" class="sidebar-link sidebar-link-danger"><span>Sign Up</span></a>
+            <a href="/logout" class="sidebar-link sidebar-link-danger"><span>Logout</span></a>
         </div>
 </div>
 
 <div class="container">
-    <h1>🔍Code Explanation</h1>
+    <h1>Code Explanation</h1>
     <p class="subtitle">Paste your code and get a breakdown and explanation instantly.</p>
 
     <form method="POST" id="summaryForm" onsubmit="showLoading()">
@@ -67,7 +67,7 @@
         <br><br>
 
         <button type="submit">Explain Code</button>
-        <button type="button" class="btn-clear" onclick="clearSummary()">🗑 Clear</button>
+        <button type="button" class="btn-clear" onclick="clearSummary()">Clear</button>
 
         <p id="loadingMessage" style="display:none; margin-top:12px;">⏳ Analyzing code...</p>
 
@@ -75,21 +75,21 @@
 
     {% if explanation %}
     <div class="summary-card" id="summaryResults">
-        <h3>📖 What it does</h3>
+        <h3>What it does</h3>
         <p>{{ explanation }}</p>
     </div>
     {% endif %}
 
     {% if problems %}
     <div class="summary-card issues">
-        <h3>⚠️ Issues found</h3>
+        <h3>Issues found</h3>
         <p style="white-space: pre-wrap;">{{ problems }}</p>
     </div>
     {% endif %}
 
     {% if corrected_code %}
     <div class="summary-card fix">
-        <h3>✅ Corrected code</h3>
+        <h3>Corrected code</h3>
         <pre>{{ corrected_code }}</pre>
     </div>
     {% endif %}

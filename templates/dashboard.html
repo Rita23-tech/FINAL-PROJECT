@@ -21,9 +21,9 @@
         <a href="/logout">Logout</a>
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
-        <button onclick="toggleDarkMode()">🌙</button>
+        <button onclick="toggleDarkMode()">Dark Mode</button>
         <button class="profile-btn" onclick="toggleProfile()">
-            👤 {{ session.get('username', 'User') }}
+            {{ session.get('username', 'User') }}
         </button>
     </div>
 </nav>
@@ -34,14 +34,23 @@
 
     <div class="profile-panel-header">
         <h3>My Profile</h3>
-        <button class="panel-close-btn" onclick="toggleProfile()">✕</button>
+        <button class="panel-close-btn" onclick="toggleProfile()">×</button>
     </div>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="result">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
 
     <div class="profile-avatar">
         {{ session.get('username', 'U')[0].upper() }}
     </div>
 
-    <div class="profile-info">
+    <!-- ── Display view ── -->
+    <div class="profile-info" id="profileView">
         <div class="profile-info-row">
             <span class="profile-info-label">Username</span>
             <span class="profile-info-value">{{ user['username'] }}</span>
@@ -56,22 +65,50 @@
             <span class="profile-info-label">Total Checks</span>
             <span class="profile-info-value">{{ total_checks }}</span>
         </div>
+        <button class="btn-edit-profile" onclick="toggleEditProfile()">Edit Profile</button>
     </div>
+
+    <!-- ── Edit form (hidden until "Edit Profile" is clicked) ── -->
+    <form class="profile-edit-form" id="profileEditForm" method="POST" action="/profile/update" style="display:none;">
+        <label class="profile-info-label" for="edit-username">Username</label>
+        <input type="text" id="edit-username" name="username" value="{{ user['username'] }}">
+
+        <label class="profile-info-label" for="edit-new-password">New Password <span style="font-weight:normal;">(leave blank to keep current)</span></label>
+        <input type="password" id="edit-new-password" name="new_password" autocomplete="new-password">
+
+        <label class="profile-info-label" for="edit-current-password">Current Password <span style="font-weight:normal;">(required to save)</span></label>
+        <input type="password" id="edit-current-password" name="current_password" autocomplete="current-password" required>
+
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <button type="submit" class="btn-save-profile">Save Changes</button>
+            <button type="button" class="btn-cancel-profile" onclick="toggleEditProfile()">Cancel</button>
+        </div>
+    </form>
 
     <div class="profile-section-title">Recent Checks</div>
     {% if recent_checks %}
         {% for check in recent_checks %}
         <div class="recent-check-row">
-            <span class="recent-check-lang">{{ check['language'] }}</span>
-            <span class="recent-check-score
-                {% if check['similarity'] >= 70 %}score-high
-                {% elif check['similarity'] >= 40 %}score-medium
-                {% else %}score-low{% endif %}">
-                {{ check['similarity'] }}%
-            </span>
-            <span class="recent-check-date">{{ check['created_at'][:10] }}</span>
+            <div class="recent-check-main">
+                <span class="tool-badge tool-badge-{{ check['tool_type'] }}">{{ tool_label(check['tool_type']) }}</span>
+                <span class="recent-check-lang">{{ check['language'] }}</span>
+            </div>
+            <div class="recent-check-side">
+                {% if check['similarity'] is not none %}
+                <span class="recent-check-score
+                    {% if check['similarity'] >= 70 %}score-high
+                    {% elif check['similarity'] >= 40 %}score-medium
+                    {% else %}score-low{% endif %}">
+                    {{ check['similarity'] }}%
+                </span>
+                {% else %}
+                <span class="recent-check-score score-na">—</span>
+                {% endif %}
+                <span class="recent-check-date">{{ check['created_at'][:10] }}</span>
+            </div>
         </div>
         {% endfor %}
+        <a href="/history" class="view-full-history-link">View full history →</a>
     {% else %}
         <p class="no-checks">No checks yet. Try the demo!</p>
     {% endif %}
@@ -87,14 +124,15 @@
         <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">◀</button>
         <div class="sidebar-content">
             <p class="sidebar-label">Navigation</p>
-            <a href="/demo"           class="sidebar-link">🔍 <span>Plagiarism Checker</span></a>
-            <a href="/code-summary"   class="sidebar-link">📖 <span>Code Summary</span></a>
-            <a href="/code-quiz"      class="sidebar-link">🧠 <span>Code Quiz</span></a>
-            <a href="/code-converter" class="sidebar-link">🔄 <span>Code Converter</span></a>
+            <a href="/demo"           class="sidebar-link"><span>Plagiarism Checker</span></a>
+            <a href="/code-summary"   class="sidebar-link"><span>Code Summary</span></a>
+            <a href="/code-quiz"      class="sidebar-link"><span>Code Quiz</span></a>
+            <a href="/code-converter" class="sidebar-link"><span>Code Converter</span></a>
+            <a href="/history"        class="sidebar-link"><span>History</span></a>
             <hr class="sidebar-divider">
-            <a href="/login" class="sidebar-link sidebar-link-danger">🔑 <span>Login</span></a>
-            <a href="/signup" class="sidebar-link sidebar-link-danger">🔑 <span>Sign Up</span></a>
-            <a href="/logout" class="sidebar-link sidebar-link-danger">🚪 <span>Logout</span></a>
+            <a href="/login" class="sidebar-link sidebar-link-danger"><span>Login</span></a>
+            <a href="/signup" class="sidebar-link sidebar-link-danger"><span>Sign Up</span></a>
+            <a href="/logout" class="sidebar-link sidebar-link-danger"><span>Logout</span></a>
         </div>
     </div>
 
@@ -103,7 +141,7 @@
         <div class="container">
 
             <div class="dash-welcome">
-                <h1>Welcome back, {{ session.get('username', 'User') }} 👋</h1>
+                <h1>Welcome back, {{ session.get('username', 'User') }}</h1>
                 <p>What would you like to do today?</p>
             </div>
 
@@ -114,7 +152,7 @@
                 </div>
                 <div class="stat-card stat-pink">
                     <span class="stat-number">
-                        {% if recent_checks %}{{ recent_checks[0]['similarity'] }}%
+                        {% if recent_checks and recent_checks[0]['similarity'] is not none %}{{ recent_checks[0]['similarity'] }}%
                         {% else %}—{% endif %}
                     </span>
                     <span class="stat-label">Last Score</span>
@@ -125,11 +163,42 @@
                 </div>
             </div>
 
-            <h2 style="margin-bottom:16px;">Your Tools</h2>
+            <div class="dash-activity-header">
+                <h2>Recent Activity</h2>
+                <a href="/history" class="view-full-history-link">View full history →</a>
+            </div>
+            {% if recent_checks %}
+            <div class="dash-activity-list">
+                {% for check in recent_checks %}
+                <div class="recent-check-row">
+                    <div class="recent-check-main">
+                        <span class="tool-badge tool-badge-{{ check['tool_type'] }}">{{ tool_label(check['tool_type']) }}</span>
+                        <span class="recent-check-lang">{{ check['language'] }}</span>
+                    </div>
+                    <div class="recent-check-side">
+                        {% if check['similarity'] is not none %}
+                        <span class="recent-check-score
+                            {% if check['similarity'] >= 70 %}score-high
+                            {% elif check['similarity'] >= 40 %}score-medium
+                            {% else %}score-low{% endif %}">
+                            {{ check['similarity'] }}%
+                        </span>
+                        {% else %}
+                        <span class="recent-check-score score-na">—</span>
+                        {% endif %}
+                        <span class="recent-check-date">{{ check['created_at'][:10] }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+                <p class="no-checks">No submissions yet — try the plagiarism checker below.</p>
+            {% endif %}
+
+            <h2 style="margin-bottom:16px; margin-top:32px;">Your Tools</h2>
             <div class="dash-tools-grid">
 
                 <a href="/demo" class="dash-tool-card tool-cyan">
-                    <span class="dash-tool-icon">🔍</span>
                     <div>
                         <h3>Plagiarism Checker</h3>
                         <p>Compare two code snippets for similarity</p>
@@ -137,7 +206,6 @@
                 </a>
 
                 <a href="/code-summary" class="dash-tool-card tool-pink">
-                    <span class="dash-tool-icon">📖</span>
                     <div>
                         <h3>Code Summary</h3>
                         <p>Explain and debug any code instantly</p>
@@ -145,7 +213,6 @@
                 </a>
 
                 <a href="/code-quiz" class="dash-tool-card tool-purple">
-                    <span class="dash-tool-icon">🧠</span>
                     <div>
                         <h3>Code Quiz</h3>
                         <p>Test your understanding of any code</p>
@@ -153,7 +220,6 @@
                 </a>
 
                 <a href="/code-converter" class="dash-tool-card tool-amber">
-                    <span class="dash-tool-icon">🔄</span>
                     <div>
                         <h3>Code Converter</h3>
                         <p>Convert code between languages</p>
@@ -186,6 +252,15 @@
         profileOpen = !profileOpen;
         document.getElementById("profilePanel").classList.toggle("open", profileOpen);
         document.getElementById("profileOverlay").classList.toggle("open", profileOpen);
+    }
+
+    // ── Profile edit form toggle ──────────────────
+    function toggleEditProfile() {
+        const view = document.getElementById("profileView");
+        const form = document.getElementById("profileEditForm");
+        const editing = form.style.display === "none";
+        form.style.display = editing ? "flex" : "none";
+        view.style.display = editing ? "none" : "block";
     }
 
     function toggleDarkMode() {

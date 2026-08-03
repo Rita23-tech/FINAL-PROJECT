@@ -1,6 +1,5 @@
-from flask import flash, redirect, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Blueprint, render_template, request, redirect, url_for, session
+import sqlite3
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import get_db
 
@@ -12,26 +11,38 @@ def signup():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
 
-        if username and password:
-            conn = get_db()
-            cursor = conn.cursor()
+        if not (username and password and confirm_password):
+            flash("Please fill in every field.")
+            return redirect(url_for('auth.signup'))
 
-            hashed_password = generate_password_hash(password)
+        if password != confirm_password:
+            flash("Passwords don't match.")
+            return redirect(url_for('auth.signup'))
 
-            try:
-                cursor.execute(
-                    "INSERT INTO users (username, password) VALUES (?, ?)",
-                    (username, hashed_password)
-                )
-                conn.commit()
-                conn.close()
-                return redirect(url_for('auth.login'))
+        if len(password) < 8 or not any(c.isalpha() for c in password) or not any(c.isdigit() for c in password):
+            flash("Password must be at least 8 characters and include a letter and a number.")
+            return redirect(url_for('auth.signup'))
 
-            except:
-                conn.close()
-                flash("Username already exists. Please choose another.")
-                return redirect(url_for('auth.signup'))
+        conn = get_db()
+        cursor = conn.cursor()
+
+        hashed_password = generate_password_hash(password)
+
+        try:
+            cursor.execute(
+                "INSERT INTO users (username, password) VALUES (?, ?)",
+                (username, hashed_password)
+            )
+            conn.commit()
+            conn.close()
+            return redirect(url_for('auth.login'))
+
+        except sqlite3.IntegrityError:
+            conn.close()
+            flash("Username already exists. Please choose another.")
+            return redirect(url_for('auth.signup'))
 
     return render_template('signup.html')
 
@@ -51,6 +62,7 @@ def login():
 
         if user and check_password_hash(user['password'], password):
             session['user_id'] = user['id']
+            session['username'] = user['username']
             return redirect(url_for('demo'))
 
         flash("Invalid username or password.")
@@ -65,6 +77,48 @@ def logout():
     session.clear()
     return redirect(url_for('landing'))
 
-from flask import session, redirect, url_for
 
+@auth.route('/profile/update', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
 
+    new_username = request.form.get('username', '').strip()
+    current_password = request.form.get('current_password', '')
+    new_password = request.form.get('new_password', '').strip()
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],))
+    user = cursor.fetchone()
+
+    # Require the current password before changing anything —
+    # protects against someone editing a session left open on a shared machine
+    if not user or not check_password_hash(user['password'], current_password):
+        conn.close()
+        flash("Current password is incorrect.")
+        return redirect(url_for('dashboard'))
+
+    if new_username and new_username != user['username']:
+        try:
+            cursor.execute(
+                "UPDATE users SET username = ? WHERE id = ?",
+                (new_username, session['user_id'])
+            )
+            session['username'] = new_username
+        except sqlite3.IntegrityError:
+            conn.close()
+            flash("That username is already taken.")
+            return redirect(url_for('dashboard'))
+
+    if new_password:
+        cursor.execute(
+            "UPDATE users SET password = ? WHERE id = ?",
+            (generate_password_hash(new_password), session['user_id'])
+        )
+
+    conn.commit()
+    conn.close()
+    flash("Profile updated.")
+    return redirect(url_for('dashboard'))

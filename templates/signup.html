@@ -22,7 +22,7 @@
         <a href="/signup">Sign Up</a>
         <a href="/logout">Logout</a>
     </div>
-    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">Dark Mode</button>
 </nav>
 
     <div class="container">
@@ -43,7 +43,11 @@
         <br><br>
 
         <label for="password">Password</label><br>
-        <input type="password" id="password" name="password" autocomplete="new-password" required>
+        <input type="password" id="password" name="password" autocomplete="new-password" required minlength="8">
+        <p style="font-size:12px; color:#9ca3af; margin:-12px 0 18px;">At least 8 characters, with a letter and a number.</p>
+
+        <label for="confirm_password">Confirm Password</label><br>
+        <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required minlength="8">
         <br><br>
 
         <button type="submit">Sign Up</button>

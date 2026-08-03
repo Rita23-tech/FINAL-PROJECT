@@ -31,10 +31,21 @@ def create_tables():
             user_id INTEGER,
             similarity REAL,
             language TEXT NOT NULL,
+            tool_type TEXT NOT NULL DEFAULT 'plagiarism',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
+
+    # Migration: add tool_type to a stored_codes table that already
+    # existed before this column was introduced, so old databases
+    # (and old rows) don't break.
+    cursor.execute("PRAGMA table_info(stored_codes)")
+    existing_columns = [row["name"] for row in cursor.fetchall()]
+    if "tool_type" not in existing_columns:
+        cursor.execute(
+            "ALTER TABLE stored_codes ADD COLUMN tool_type TEXT NOT NULL DEFAULT 'plagiarism'"
+        )
 
     conn.commit()
     conn.close()

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History | CodeCheck AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav>
+    <div><strong>CodeCheck AI</strong></div>
+    <div>
+        <a href="/">Home</a>
+        <a href="/demo">Demo</a>
+        <a href="/code-summary">Code Summary</a>
+        <a href="/code-converter">Code Converter</a>
+        <a href="/code-quiz">Code Quiz</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="dash-layout" id="dashLayout">
+
+    <div class="dash-sidebar" id="dashSidebar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">◀</button>
+        <div class="sidebar-content">
+            <p class="sidebar-label">Navigation</p>
+            <a href="/dashboard"      class="sidebar-link"><span>Dashboard</span></a>
+            <a href="/demo"           class="sidebar-link"><span>Plagiarism Checker</span></a>
+            <a href="/code-summary"   class="sidebar-link"><span>Code Summary</span></a>
+            <a href="/code-quiz"      class="sidebar-link"><span>Code Quiz</span></a>
+            <a href="/code-converter" class="sidebar-link"><span>Code Converter</span></a>
+            <hr class="sidebar-divider">
+            <a href="/logout" class="sidebar-link sidebar-link-danger"><span>Logout</span></a>
+        </div>
+    </div>
+
+    <div class="dash-main">
+        <div class="container">
+
+            <div class="dash-welcome">
+                <h1>Submission History</h1>
+                <p>Every code check you've submitted — {{ all_checks|length }} total. View only, nothing here can be edited.</p>
+            </div>
+
+            {% if all_checks %}
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Tool</th>
+                        <th>Language</th>
+                        <th>Similarity</th>
+                        <th>Submitted Code</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for check in all_checks %}
+                    <tr>
+                        <td class="recent-check-date">{{ check['created_at'][:10] }}</td>
+                        <td><span class="tool-badge tool-badge-{{ check['tool_type'] }}">{{ tool_label(check['tool_type']) }}</span></td>
+                        <td class="recent-check-lang">{{ check['language'] }}</td>
+                        {% if check['similarity'] is not none %}
+                        <td class="recent-check-score
+                            {% if check['similarity'] >= 70 %}score-high
+                            {% elif check['similarity'] >= 40 %}score-medium
+                            {% else %}score-low{% endif %}">
+                            {{ check['similarity'] }}%
+                        </td>
+                        {% else %}
+                        <td class="recent-check-score score-na">—</td>
+                        {% endif %}
+                        <td>
+                            <details>
+                                <summary>View code</summary>
+                                <pre class="history-code-preview">{{ check['code_text'] }}</pre>
+                            </details>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p class="no-checks">No submissions yet. Try the <a href="/demo">plagiarism checker</a>.</p>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>CodeCheck AI &nbsp;·&nbsp; Built with Flask + Groq (Llama 3.3)</p>
+</footer>
+
+<script>
+    let sidebarOpen = true;
+    function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        const sidebar = document.getElementById("dashSidebar");
+        const btn     = document.getElementById("sidebarToggle");
+        sidebar.classList.toggle("collapsed", !sidebarOpen);
+        btn.textContent = sidebarOpen ? "◀" : "▶";
+    }
+</script>
+
+</body>
+</html>

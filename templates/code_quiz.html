@@ -20,7 +20,7 @@
         <a href="/code-quiz">Code Quiz</a>
         <a href="/dashboard">Dashboard</a>
     </div>
-    <button onclick="toggleDarkMode()" style="margin-left:20px;">🌙</button>
+    <button onclick="toggleDarkMode()" style="margin-left:20px;">Dark Mode</button>
 </nav>
 
 <div class="dash-layout" id="dashLayout">
@@ -30,17 +30,17 @@
         <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">◀</button>
         <div class="sidebar-content">
             <p class="sidebar-label">Navigation</p>
-            <a href="/demo"           class="sidebar-link">🔍 <span>Plagiarism Checker</span></a>
-            <a href="/code-summary"   class="sidebar-link">📖 <span>Code Summary</span></a>
-            <a href="/code-quiz"      class="sidebar-link">🧠 <span>Code Quiz</span></a>
-            <a href="/code-converter" class="sidebar-link">🔄 <span>Code Converter</span></a>
+            <a href="/demo"           class="sidebar-link"><span>Plagiarism Checker</span></a>
+            <a href="/code-summary"   class="sidebar-link"><span>Code Summary</span></a>
+            <a href="/code-quiz"      class="sidebar-link"><span>Code Quiz</span></a>
+            <a href="/code-converter" class="sidebar-link"><span>Code Converter</span></a>
             <hr class="sidebar-divider">
-            <a href="/logout" class="sidebar-link sidebar-link-danger">🚪 <span>Logout</span></a>
+            <a href="/logout" class="sidebar-link sidebar-link-danger"><span>Logout</span></a>
         </div>
 </div>
 
 <div class="container">
-    <h1>🧠 Code Quiz Generator</h1>
+    <h1>Code Quiz Generator</h1>
     <p class="subtitle">Paste any code and get an instant comprehension quiz.</p>
 
     <form method="POST" id="quizForm" onsubmit="showLoading()">
@@ -61,7 +61,7 @@
         <br><br>
 
         <button type="submit">Generate Quiz</button>
-        <button type="button" class="btn-clear" onclick="clearQuiz()">🗑 Clear</button>
+        <button type="button" class="btn-clear" onclick="clearQuiz()">Clear</button>
 
         <p id="loadingMessage" style="display:none;">⏳ Generating your quiz...</p>
 
@@ -69,14 +69,14 @@
 
     {% if error %}
     <div class="quiz-error">
-        ⚠️ {{ error }}
+        Error: {{ error }}
     </div>
     {% endif %}
 
     {% if quiz_data %}
     <div class="quiz-section" id="quizSection">
 
-        <h2>📋 Your Quiz</h2>
+        <h2>Your Quiz</h2>
         <p class="quiz-meta">Answer all questions then check your score.</p>
 
         <form id="answerForm">
@@ -112,7 +112,7 @@
         <div class="score-bar" id="scoreBar" style="display:none;">
             <h3 id="scoreText"></h3>
             <p id="scoreMessage"></p>
-            <button type="button" class="btn-retake" onclick="retakeQuiz()">🔄 Retake Quiz</button>
+            <button type="button" class="btn-retake" onclick="retakeQuiz()">Retake Quiz</button>
         </div>
 
     </div>
@@ -149,11 +149,11 @@
 
         if (selected === correct) {
             correctCount++;
-            feedback.textContent = "✅ Correct!";
+            feedback.textContent = "Correct!";
             feedback.className   = "feedback correct";
             card.classList.add("card-correct");
         } else {
-            feedback.textContent = `❌ Wrong — correct answer was ${correct}`;
+            feedback.textContent = `Wrong — correct answer was ${correct}`;
             feedback.className   = "feedback wrong";
             card.classList.add("card-wrong");
         }
@@ -175,9 +175,9 @@
         scoreText.textContent  = `You scored ${correctCount} / ${totalQuestions}`;
 
         const pct = (correctCount / totalQuestions) * 100;
-        if      (pct === 100) scoreMsg.textContent = "🎉 Perfect score! You clearly understand this code.";
-        else if (pct >= 60)   scoreMsg.textContent = "👍 Good effort! Review the questions you missed.";
-        else                  scoreMsg.textContent = "📖 Keep studying — try reading through the code again.";
+        if      (pct === 100) scoreMsg.textContent = "Perfect score! You clearly understand this code.";
+        else if (pct >= 60)   scoreMsg.textContent = "Good effort! Review the questions you missed.";
+        else                  scoreMsg.textContent = "Keep studying — try reading through the code again.";
 
         scoreBar.scrollIntoView({ behavior: "smooth" });
     }
