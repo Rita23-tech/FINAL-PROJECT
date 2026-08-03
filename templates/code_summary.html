@@ -48,6 +48,14 @@
     <h1>Code Explanation</h1>
     <p class="subtitle">Paste your code and get a breakdown and explanation instantly.</p>
 
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="result">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
     <form method="POST" id="summaryForm" onsubmit="showLoading()">
 
         <label>Select Language:</label>

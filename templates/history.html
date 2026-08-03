@@ -59,7 +59,7 @@
                 <tbody>
                     {% for check in all_checks %}
                     <tr>
-                        <td class="recent-check-date">{{ check['created_at'][:10] }}</td>
+                        <td class="recent-check-date">{{ check['created_at'].strftime('%Y-%m-%d') }}</td>
                         <td><span class="tool-badge tool-badge-{{ check['tool_type'] }}">{{ tool_label(check['tool_type']) }}</span></td>
                         <td class="recent-check-lang">{{ check['language'] }}</td>
                         {% if check['similarity'] is not none %}

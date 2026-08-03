@@ -47,6 +47,14 @@
     <h1>Code Converter</h1>
     <p class="subtitle">Paste your code, pick a target language, and get an instant conversion.</p>
 
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="result">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
     <form method="POST" id="converterForm" onsubmit="showLoading()">
 
         <div class="lang-row">

@@ -1,4 +1,4 @@
-import sqlite3
+import psycopg2
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import get_db
@@ -32,14 +32,15 @@ def signup():
 
         try:
             cursor.execute(
-                "INSERT INTO users (username, password) VALUES (?, ?)",
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
                 (username, hashed_password)
             )
             conn.commit()
             conn.close()
             return redirect(url_for('auth.login'))
 
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
+            conn.rollback()
             conn.close()
             flash("Username already exists. Please choose another.")
             return redirect(url_for('auth.signup'))
@@ -56,7 +57,7 @@ def login():
         conn = get_db()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
         conn.close()
 
@@ -90,7 +91,7 @@ def update_profile():
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],))
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
     user = cursor.fetchone()
 
     # Require the current password before changing anything —
@@ -103,18 +104,19 @@ def update_profile():
     if new_username and new_username != user['username']:
         try:
             cursor.execute(
-                "UPDATE users SET username = ? WHERE id = ?",
+                "UPDATE users SET username = %s WHERE id = %s",
                 (new_username, session['user_id'])
             )
             session['username'] = new_username
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
+            conn.rollback()
             conn.close()
             flash("That username is already taken.")
             return redirect(url_for('dashboard'))
 
     if new_password:
         cursor.execute(
-            "UPDATE users SET password = ? WHERE id = ?",
+            "UPDATE users SET password = %s WHERE id = %s",
             (generate_password_hash(new_password), session['user_id'])
         )
 

@@ -1,8 +1,9 @@
 import os
 from urllib import response
+import psycopg2
 from dotenv import load_dotenv
 from groq import Groq
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for, flash
 from auth import auth
 from database import create_tables, get_db
 from plagiarism import jaccard_similarity, combined_similarity
@@ -49,6 +50,29 @@ app.register_blueprint(auth)
 create_tables()
 
 
+def save_check(user_id, code_text, similarity, language, tool_type):
+    """Save one tool use to history. Returns True on success.
+    Returns False (and never raises) if the save fails — most commonly
+    because the session's user_id no longer exists in the database, e.g.
+    an old browser session left over from before a database reset."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """INSERT INTO stored_codes
+            (code_text, user_id, similarity, language, tool_type)
+            VALUES (%s, %s, %s, %s, %s)""",
+            (code_text, user_id, similarity, language, tool_type)
+        )
+        conn.commit()
+        return True
+    except psycopg2.IntegrityError:
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+
 @app.route('/')
 def landing():
     return render_template('landing.html')
@@ -67,16 +91,9 @@ def demo():
             result = combined_similarity(code1, code2)
 
             if 'user_id' in session:
-                conn = get_db()
-                cursor = conn.cursor()
-                cursor.execute(
-                    """INSERT INTO stored_codes
-                    (code_text, user_id, similarity, language, tool_type)
-                    VALUES (?, ?, ?, ?, ?)""",
-                    (code1, session['user_id'], result, language, 'plagiarism')
-                )
-                conn.commit()
-                conn.close()
+                if not save_check(session['user_id'], code1, result, language, 'plagiarism'):
+                    session.clear()
+                    flash("Your session had expired — please log in again. Your result above is still valid.")
 
         elif code1:
             if 'user_id' not in session:
@@ -87,10 +104,11 @@ def demo():
             current_user_id = session['user_id']
 
             cursor.execute(
-                "SELECT code_text FROM stored_codes WHERE language = ? AND user_id != ?",
+                "SELECT code_text FROM stored_codes WHERE language = %s AND user_id != %s",
                 (language, current_user_id)
             )
             previous_codes = cursor.fetchall()
+            conn.close()
 
             highest_similarity = 0
             for row in previous_codes:
@@ -99,14 +117,11 @@ def demo():
                 if similarity > highest_similarity:
                     highest_similarity = similarity
 
-            cursor.execute(
-                """INSERT INTO stored_codes
-                (code_text, user_id, similarity, language, tool_type)
-                VALUES (?, ?, ?, ?, ?)""",
-                (code1, session['user_id'], highest_similarity, language, 'plagiarism')
-            )
-            conn.commit()
-            conn.close()
+            if not save_check(session['user_id'], code1, highest_similarity, language, 'plagiarism'):
+                session.clear()
+                flash("Your session had expired — please log in again.")
+                return redirect(url_for('auth.login'))
+
             result = highest_similarity
 
     return render_template('demo.html', result=result)
@@ -139,6 +154,7 @@ Code to analyze:
 
 Keep everything short and direct. No long explanations."""
 
+            ai_call_succeeded = False
             try:
                 raw, error = generate_with_fallback(prompt)
                 if error:
@@ -170,21 +186,15 @@ Keep everything short and direct. No long explanations."""
                 explanation    = clean(explanation)
                 problems       = clean(problems)
                 corrected_code = clean(corrected_code)
-
-                if 'user_id' in session:
-                    conn = get_db()
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        """INSERT INTO stored_codes
-                        (code_text, user_id, similarity, language, tool_type)
-                        VALUES (?, ?, ?, ?, ?)""",
-                        (user_code, session['user_id'], None, language, 'code_summary')
-                    )
-                    conn.commit()
-                    conn.close()
+                ai_call_succeeded = True
 
             except Exception as e:
                 problems = f"Error calling AI model: {e}"
+
+            if ai_call_succeeded and 'user_id' in session:
+                if not save_check(session['user_id'], user_code, None, language, 'code_summary'):
+                    session.clear()
+                    flash("Your session had expired — please log in again. Your result above is still valid.")
 
     return render_template(
         "code_summary.html",
@@ -232,6 +242,7 @@ Rules:
 Code to analyze:
 {user_code}"""
 
+            ai_call_succeeded = False
             try:
                 raw, error = generate_with_fallback(prompt)
                 if error:
@@ -241,20 +252,15 @@ Code to analyze:
 
                 import json
                 quiz_data = json.loads(raw)
-
-                conn = get_db()
-                cursor = conn.cursor()
-                cursor.execute(
-                    """INSERT INTO stored_codes
-                    (code_text, user_id, similarity, language, tool_type)
-                    VALUES (?, ?, ?, ?, ?)""",
-                    (user_code, session['user_id'], None, language, 'code_quiz')
-                )
-                conn.commit()
-                conn.close()
+                ai_call_succeeded = True
 
             except Exception as e:
                 error = f"Error generating quiz: {e}"
+
+            if ai_call_succeeded:
+                if not save_check(session['user_id'], user_code, None, language, 'code_quiz'):
+                    session.clear()
+                    flash("Your session had expired — please log in again. Your quiz above is still valid.")
 
     return render_template("code_quiz.html", quiz_data=quiz_data, error=error)
 
@@ -294,6 +300,7 @@ Rules:
 Code to convert:
 {user_code}"""
 
+            ai_call_succeeded = False
             try:
                 raw, error = generate_with_fallback(prompt)
                 if error:
@@ -320,19 +327,15 @@ Code to convert:
                     converted_code = converted_code.replace("```python", "").replace("```cpp", "")
                     converted_code = converted_code.replace("```", "").strip()
 
-                conn = get_db()
-                cursor = conn.cursor()
-                cursor.execute(
-                    """INSERT INTO stored_codes
-                    (code_text, user_id, similarity, language, tool_type)
-                    VALUES (?, ?, ?, ?, ?)""",
-                    (user_code, session['user_id'], None, f"{source_lang} to {target_lang}", 'code_converter')
-                )
-                conn.commit()
-                conn.close()
+                ai_call_succeeded = True
 
             except Exception as e:
                 error = f"Error calling Model API: {e}"
+
+            if ai_call_succeeded:
+                if not save_check(session['user_id'], user_code, None, f"{source_lang} to {target_lang}", 'code_converter'):
+                    session.clear()
+                    flash("Your session had expired — please log in again. Your converted code above is still valid.")
 
     return render_template(
         "code_converter.html",
@@ -360,18 +363,18 @@ def dashboard():
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],))
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
     user = cursor.fetchone()
 
     cursor.execute(
-        "SELECT COUNT(*) as total FROM stored_codes WHERE user_id = ?",
+        "SELECT COUNT(*) as total FROM stored_codes WHERE user_id = %s",
         (session['user_id'],)
     )
     total_checks = cursor.fetchone()['total']
 
     cursor.execute(
         """SELECT similarity, language, tool_type, created_at
-           FROM stored_codes WHERE user_id = ?
+           FROM stored_codes WHERE user_id = %s
            ORDER BY created_at DESC LIMIT 5""",
         (session['user_id'],)
     )
@@ -396,7 +399,7 @@ def history():
 
     cursor.execute(
         """SELECT code_text, similarity, language, tool_type, created_at
-           FROM stored_codes WHERE user_id = ?
+           FROM stored_codes WHERE user_id = %s
            ORDER BY created_at DESC""",
         (session['user_id'],)
     )

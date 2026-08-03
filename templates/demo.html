@@ -33,6 +33,14 @@
 <div class="container">
     <h1>Code Similarity Checker</h1>
 
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="result">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
     <form method="POST" id="similarityForm">
 
         <h3>Code A</h3>

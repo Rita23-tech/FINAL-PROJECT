@@ -58,7 +58,7 @@
         <div class="profile-info-row">
             <span class="profile-info-label">Member Since</span>
             <span class="profile-info-value">
-                {{ user['created_at'][:10] if user['created_at'] else 'N/A' }}
+                {{ user['created_at'].strftime('%Y-%m-%d') if user['created_at'] else 'N/A' }}
             </span>
         </div>
         <div class="profile-info-row">
@@ -104,7 +104,7 @@
                 {% else %}
                 <span class="recent-check-score score-na">—</span>
                 {% endif %}
-                <span class="recent-check-date">{{ check['created_at'][:10] }}</span>
+                <span class="recent-check-date">{{ check['created_at'].strftime('%Y-%m-%d') }}</span>
             </div>
         </div>
         {% endfor %}
@@ -186,7 +186,7 @@
                         {% else %}
                         <span class="recent-check-score score-na">—</span>
                         {% endif %}
-                        <span class="recent-check-date">{{ check['created_at'][:10] }}</span>
+                        <span class="recent-check-date">{{ check['created_at'].strftime('%Y-%m-%d') }}</span>
                     </div>
                 </div>
                 {% endfor %}
